@@ -1,4 +1,6 @@
-![](Zumo.jpg)
+<p align="center">
+  <img src="Zumo.jpg" />
+</p>
 
 # ZUMO-COOPERATION-(SWARM)-
 Zumo cooperate robots with ordering from one of them.
