@@ -19,7 +19,7 @@ enum commands
   TurnLeft = 3  
 };
 
-roles role{};
+roles role { roles::Leader };
 const int sizeOfString = 40;
 const int speed = 100;
 
@@ -81,28 +81,33 @@ void execute()
   Serial.print(duration);
   Serial.print(" message: ");
   Serial.print(*recivedMessage);
-  if (command == GoForward)
-  {
-    Serial.println("System: I'm going forward");
-    motors.setSpeeds(speed, speed);
-  }
-  else if (command == GoBackward)
-  {
-    Serial.println("System: I'm going backward");
-    motors.setSpeeds(-speed, -speed);
-  }
-  else if (command == TurnRight)
-  {
-    Serial.println("System: I'm turning to the right");
-    motors.setLeftSpeed(speed);
-  }
-  else if (command == TurnLeft)
-  {
-    Serial.println("System: I'm turning to the left");
-    motors.setRightSpeed(speed);
-  }
+//  if (command == commands::GoForward)
+//  {
+//    Serial.println("System: I'm going forward");
+//    motors.setLeftSpeed(speed);
+//    motors.setRightSpeed(speed);
+//  }
+//  else if (command == commands::GoBackward)
+//  {
+//    Serial.println("System: I'm going backward");
+//    motors.setLeftSpeed(speed);
+//  }
+//  else if (command == commands::TurnRight)
+//  {
+//    Serial.println("System: I'm turning to the right");
+//    motors.setLeftSpeed(speed);
+//  }
+//  else if (command == commands::TurnLeft)
+//  {
+//    Serial.println("System: I'm turning to the left");
+//    motors.setRightSpeed(speed);
+//    motors.setLeftSpeed(speed);
+//  }
+  motors.setLeftSpeed(speed);
+  motors.setRightSpeed(speed);
   delay(duration);
-  motors.setSpeeds(0, 0);
+  motors.setLeftSpeed(0);
+  motors.setRightSpeed(0);
   Serial.println("System: End of executing");
 }
 
@@ -119,120 +124,30 @@ void setup()
   Serial.println("System: radio setup done");
   delay(5000);
   Serial.println("System: Delay after setup done");
+  Serial.print("System: role: ");
+  Serial.println(role);
   
-  // Listening in case that other Zumo was first turn on
-  // If other zumo will not send anything until i = 1000
-  // then this is Leader
-  bool everythingwell = true;
-  do
-  {
-    for (unsigned i = 0; i < 1000; ++i)
-    {
-      if (radio.available())
-      {
-        Serial.println("System: I'm a student");
-        read();
-        role = Student;
-        break;
-      }
-      role = Leader;
-      i++;
-      delay(10);
-    }
-  
-    Serial.print("System: role: ");
-    Serial.println(role);
-    if (role == Leader)
-    {
-      Serial.println("System: I'm a leader. Sending first message");
-      // Sending first message as a leader
-      radio.stopListening();
-      radio.openWritingPipe(rxAddr);
-      *sendedMessage = "My turn to be a leader!";
-      writeMessage();
-      delay(2000);
-      
-      Serial.println("System: Waiting for agree");
-      // Waiting for agree
-      radio.openReadingPipe(0, rxAddr);
-      radio.startListening();
-      while(1)
-      {
-        if(radio.available())
-        {
-          Serial.println("System: Something catched");
-          read();
-          break;
-        }
-        else
-        {
-          radio.stopListening();
-          radio.openWritingPipe(rxAddr);
-          writeMessage();
-          delay(200);
-          radio.openReadingPipe(0, rxAddr);
-          radio.startListening();
-        }
-      }
-      if (*recivedMessage == "My turn to be a leader!")
-      {
-        everythingwell = false;
-      }
-      Serial.println("System: Be ready to send first command");
-      // Be ready to give first command
-      radio.stopListening();
-      radio.openWritingPipe(rxAddr);
-      Serial.println("System: End of setup");
-      // That's all for setup of Leader
-    }
-    else if (role == Student)
-    {
-      Serial.println("System: Sending agreement to be a student");
-      // Our agreement to be a student in this turn
-      
-      *sendedMessage = "Ok Buddy! Let's go!";
-      while(1)
-      {
-        if(radio.available())
-        {
-          Serial.println("System: Something catched");
-          break;
-        }
-        else
-        {
-          radio.stopListening();
-          radio.openWritingPipe(rxAddr);
-          writeMessage();
-          delay(200);
-          radio.openReadingPipe(0, rxAddr);
-          radio.startListening();
-        }
-      }
-      Serial.println("System: Be ready to first command. End of setup");
-      // Be ready to first command 
-    }
-    else
-    {
-      Serial.println("Error! 104");
-     delay(10000000);      
-    }
-  } while (!everythingwell);
-}
-
-void loop() 
-{
   if (role == Leader)
   {
-    Serial.println("System: Sending order as a leader");
-    // Sending order
-    order = GoForward * 1000000 + 200;
-    writeOrder();
-    delay(1000);
-    Serial.println("System: Start listening if order is accepted");
-    // Waiting for acceptation of order
+    Serial.println("System: I'm a leader. Sending first message");
+    // Sending first message as a leader
+    radio.stopListening();
+    radio.openWritingPipe(rxAddr);
+    *sendedMessage = "My turn to be a leader!";
+    writeMessage();
+    delay(10000);
+    
+    Serial.println("System: Be ready to send first command");
+    // Be ready to give first command
+    Serial.println("System: End of setup");
+    // That's all for setup of Leader
+  }
+  else if (role == Student)
+  {
     radio.openReadingPipe(0, rxAddr);
     radio.startListening();
-    while(1)
+
+    while (1)
     {
       if(radio.available())
       {
@@ -241,42 +156,31 @@ void loop()
         break;
       }
     }
+    Serial.println("System: Be ready to first command. End of setup");
+    // Be ready to first command 
+  }
+  else
+  {
+    Serial.println("Error! 159");
+    delay(10000000);      
+  }
+}
+
+void loop() 
+{
+  if (role == Leader)
+  {
+    Serial.println("System: Sending order as a leader");
+    // Sending order
+    order = commands::GoBackward * 1000000 + 20000;
+    writeOrder();
+    delay(200);
     Serial.println("System: Start to execute my own command");
     // Despite the fact of content of message start executing
     execute();
-
-    // Check what a message I got before to by synchronized with my buddy
-    Serial.println("System: Check what a message I got before to by synchronized with my buddy");
-    if (*recivedMessage == "Ok! Let's go!")
-    {
-      Serial.println("System: It was Ok! Let's go! so I must wait if he has done");
-      // Waiting for Student to finish his executing and get an response
-      while(1)
-      {
-        if(radio.available())
-        {
-          // Message probably about finished command
-          Serial.println("System: He has send sth so he's done probably");
-          read();
-          break;
-        }
-      }  
-    }
-    else if (*recivedMessage == "Done!")
-    {
-      //Leader was a bit late with executting but it doesn't matter. Start next loop!
-      Serial.println("I was a bit late!");
-    }
-    else
-    {
-      Serial.println("Error! 139");
-      delay(10000000);      
-    }
     
     Serial.println("System: Be ready to give next command. End of this loop as a Leader");
     // Be ready to give next command
-    radio.stopListening();
-    radio.openWritingPipe(rxAddr);
   }
   else if (role == Student)
   {
@@ -286,50 +190,34 @@ void loop()
       Serial.println("System: Gotten sth let's read this");
       // Reading command
       read();
-
-      Serial.println("System: Ok I've got it. Give him an answer that I have it");
-      // Giving an answer that wi will do this command
-      radio.stopListening();
-      radio.openWritingPipe(rxAddr);
-      *sendedMessage = "Ok! Let's go!";
-      writeMessage();
-
-      Serial.println("System: Start executing given comman to me but before conversion");
-      // Executing given command but before convert message to be an order
-      message2Order();
-      execute();
-
-      Serial.println("System: I've done it, send Leader a message about it");
-      // Sending message that we've done what we've done
-      *sendedMessage = "Done!";
-      radio.stopListening();
-      radio.openWritingPipe(rxAddr);
-      writeMessage();
-      delay(200);
       
-      Serial.println("System: Be sure about sync and ready for next loop. End of this loop as a Student");
-      while(1)
+      if (*recivedMessage == "My turn to be a leader!")
       {
-        if(radio.available())
-        {
-          Serial.println("System: Something catched");
-          break;
-        }
-        else
-        {
-          radio.stopListening();
-          radio.openWritingPipe(rxAddr);
-          writeMessage();
-          delay(200);
-          radio.openReadingPipe(0, rxAddr);
-          radio.startListening();
-        }
+        Serial.println("Wait for him");   
+      }
+      else
+      {  
+        Serial.println("System: Convert message to order");
+        // Convert message to order
+        message2Order();
+        
+        Serial.println("System: Execute order");
+        // Execute order
+        execute();
+
+        Serial.println("System: Be ready to get next order as a Student");
+        // Be ready to get next order as a Student
       }
     } 
+    else
+    {
+      delay(1000);
+    }
   }
   else
   {
-    Serial.println("Error! 172");
+    Serial.println("Error! 211");
     delay(10000000);      
   }
+  delay(200);
 }
