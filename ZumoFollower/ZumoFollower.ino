@@ -10,7 +10,7 @@
     slave before pushing program to zumos. 
     The other settings are scenario and 
     number of commands.
-*/------------------------------------------
+*///------------------------------------------
 #include <nRF24L01.h>
 #include <RF24.h>
 #include <SPI.h>

@@ -12,7 +12,7 @@
     This is one of the easiest way but
     it doesn't work at every time we have
     trying.
-*/------------------------------------------
+*///------------------------------------------
 #include <nRF24L01.h>
 #include <RF24.h>
 #include <SPI.h>

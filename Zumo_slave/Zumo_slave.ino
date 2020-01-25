@@ -18,7 +18,7 @@
     This is one of the easiest way but
     it doesn't work at every time we have
     trying.
-*/------------------------------------------
+*///------------------------------------------
 
 // Some variables, objects etc.
 ZumoMotors motors;
